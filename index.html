@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mystic Path - Tarot, Lenormand & 4D</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        .stars { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+        .star { position: absolute; background: white; border-radius: 50%; animation: twinkle 3s infinite; }
+        @keyframes twinkle { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+        
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; position: relative; z-index: 1; }
+        header { text-align: center; padding: 40px 0; }
+        h1 { font-size: 3rem; color: #ffd700; text-shadow: 0 0 20px rgba(255, 215, 0, 0.5); margin-bottom: 10px; }
+        .subtitle { color: #d8b4e2; font-style: italic; }
+
+        .game-area { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin: 40px 0; }
+        @media (max-width: 900px) { .game-area { grid-template-columns: 1fr; } }
+
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+        .section-title { font-size: 1.5rem; color: #ffd700; margin-bottom: 20px; text-align: center; }
+
+        .upload-area {
+            border: 2px dashed rgba(255, 215, 0, 0.5);
+            border-radius: 15px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+            background: rgba(0,0,0,0.2);
+        }
+        .upload-area:hover { border-color: #ffd700; background: rgba(255, 215, 0, 0.1); }
+        
+        .btn {
+            background: linear-gradient(45deg, #ffd700, #ff8c00);
+            color: #000;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: 0.3s;
+        }
+        .btn:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(255, 215, 0, 0.5); }
+        .btn:disabled { background: #555; cursor: not-allowed; transform: none; }
+        
+        .skip-btn {
+            background: transparent;
+            border: 1px solid #ffd700;
+            color: #ffd700;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+        .skip-btn:hover { background: rgba(255, 215, 0, 0.1); }
+
+        #palmImage { max-width: 100%; border-radius: 15px; display: none; margin: 20px auto; box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); max-height: 400px; object-fit: contain; }
+        .image-container { text-align: center; display: none; }
+
+        .status-msg { padding: 10px; border-radius: 8px; margin: 15px 0; text-align: center; display: none; }
+        .status-msg.success { background: rgba(0, 255, 0, 0.2); border: 1px solid #0f0; color: #afa; display: block; }
+        .status-msg.info { background: rgba(100, 150, 255, 0.2); border: 1px solid #69f; color: #aff; display: block; }
+        .status-msg.error { background: rgba(255, 0, 0, 0.2); border: 1px solid #f00; color: #faa; display: block; }
+
+        .cards-container { display: flex; flex-direction: column; gap: 15px; align-items: center; }
+        .tarot-card {
+            width: 100%;
+            max-width: 220px;
+            height: 340px;
+            background: linear-gradient(135deg, #2a1b3d, #1a0b2e);
+            border: 2px solid #ffd700;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.3s;
+            position: relative;
+            padding: 15px;
+        }
+        .tarot-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(255, 215, 0, 0.3); }
+        .tarot-card.revealed { background: linear-gradient(135deg, #4b2c5a, #2a1b3d); }
+        .tarot-card.disabled { opacity: 0.6; cursor: not-allowed; }
+        
+        .card-icon { font-size: 3rem; margin-bottom: 10px; }
+        .card-name { font-size: 1.1rem; color: #ffd700; font-weight: bold; text-align: center; }
+        .card-keywords { font-size: 0.85rem; color: #d8b4e2; text-align: center; font-style: italic; margin-top: 5px; display: none; }
+        .tarot-card.revealed .card-keywords { display: block; }
+        .card-pos { position: absolute; top: 10px; left: 10px; font-size: 0.8rem; color: #888; }
+
+        .lenormand-pair {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .lenormand-card {
+            width: 140px;
+            height: 200px;
+            background: linear-gradient(135deg, #1a472a, #0d2b18);
+            border: 2px solid #4ecdc4;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.3s;
+            position: relative;
+        }
+        .lenormand-card:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(78, 205, 196, 0.4); }
+        .lenormand-card.revealed { background: linear-gradient(135deg, #2d6a4f, #1a472a); }
+        .lenormand-card.disabled { opacity: 0.6; cursor: not-allowed; }
+        .lenormand-icon { font-size: 2.5rem; }
+        .lenormand-name { font-size: 0.9rem; color: #4ecdc4; font-weight: bold; text-align: center; margin-top: 5px; }
+        .lenormand-number { position: absolute; top: 5px; right: 5px; font-size: 0.7rem; color: #aaa; }
+
+        .read-btn {
+            width: 100%;
+            max-width: 400px;
+            margin: 30px auto;
+            display: block;
+            background: linear-gradient(45deg, #9b59b6, #8e44ad);
+            color: #fff;
+            border: none;
+            padding: 18px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .read-btn:hover:not(:disabled) { box-shadow: 0 0 30px rgba(155, 89, 182, 0.5); transform: scale(1.02); }
+
+        .results { margin-top: 40px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 20px; padding: 40px; display: none; }
+        .results.active { display: block; animation: fadeIn 0.8s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .reading-block { margin-bottom: 30px; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 15px; border-left: 4px solid #ffd700; }
+        .reading-block h3 { color: #ffd700; margin-bottom: 15px; font-size: 1.4rem; }
+        .reading-text { line-height: 1.8; color: #e0d0ff; font-size: 1.05rem; }
+        .highlight { color: #ffd700; font-weight: bold; }
+        
+        .insight-box { background: rgba(255, 215, 0, 0.1); border: 1px solid #ffd700; padding: 15px; border-radius: 10px; margin: 15px 0; }
+        .insight-box h4 { color: #ffd700; margin-bottom: 5px; }
+
+        .prediction-box {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(155, 89, 182, 0.15));
+            border: 2px solid #ffd700;
+            border-radius: 20px;
+            padding: 30px;
+            margin: 25px 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .prediction-title { font-size: 1.8rem; color: #ffd700; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+        .numbers-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 20px 0; }
+        .number-card { background: rgba(0, 0, 0, 0.4); border: 2px solid #ffd700; border-radius: 15px; padding: 20px; transition: 0.3s; }
+        .number-card:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(255, 215, 0, 0.4); }
+        .number-label { font-size: 0.85rem; color: #d8b4e2; margin-bottom: 8px; text-transform: uppercase; }
+        .number-value { font-size: 2.5rem; font-weight: bold; color: #ffd700; letter-spacing: 5px; text-shadow: 0 0 15px rgba(255, 215, 0, 0.6); }
+        .number-meaning { font-size: 0.85rem; color: #aaa; margin-top: 10px; font-style: italic; }
+        .lucky-period { background: rgba(255, 215, 0, 0.1); border-radius: 10px; padding: 15px; margin-top: 20px; }
+        .lucky-period h4 { color: #ffd700; margin-bottom: 10px; }
+        .warning-disclaimer { background: rgba(255, 165, 0, 0.15); border: 1px solid #ffa500; border-radius: 10px; padding: 15px; margin-top: 20px; font-size: 0.85rem; color: #ffddaa; }
+
+        footer { text-align: center; padding: 30px; color: #666; font-size: 0.9rem; }
+        input[type="file"] { display: none; }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    <div class="container">
+        <header>
+            <h1>✨ Mystic Path ✨</h1>
+            <p class="subtitle">Palmistry • Tarot • Lenormand • 4D</p>
+        </header>
+
+        <div class="game-area">
+            <div class="section">
+                <h2 class="section-title">🖐 Palm Analysis</h2>
+                <div class="upload-area" id="uploadArea">
+                    <div style="font-size: 3rem; margin-bottom: 15px;">📷</div>
+                    <h3>Upload Your Palm</h3>
+                    <p style="color: #aaa; margin: 10px 0;">Clear photo, good lighting</p>
+                    <button class="btn" onclick="document.getElementById('palmUpload').click()">Choose Image</button>
+                    <br>
+                    <button class="skip-btn" onclick="skipValidation()">✨ Skip AI (Manual)</button>
+                    <input type="file" id="palmUpload" accept="image/*">
+                </div>
+                <div id="statusMsg" class="status-msg"></div>
+                <div class="image-container" id="imgContainer">
+                    <img id="palmImage" alt="Palm">
+                    <br>
+                    <button class="btn" id="confirmBtn" onclick="confirmPalm()" style="display:none; margin-top:15px;">✓ Confirm This Is My Palm</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">🔮 Tarot Spread</h2>
+                <div class="cards-container">
+                    <div class="tarot-card disabled" id="card1" onclick="revealCard('tarot', 1)">
+                        <div class="card-pos">PAST</div>
+                        <div class="card-icon">🎴</div>
+                        <div class="card-name">Upload Palm First</div>
+                        <div class="card-keywords"></div>
+                    </div>
+                    <div class="tarot-card disabled" id="card2" onclick="revealCard('tarot', 2)">
+                        <div class="card-pos">PRESENT</div>
+                        <div class="card-icon">🎴</div>
+                        <div class="card-name">Upload Palm First</div>
+                        <div class="card-keywords"></div>
+                    </div>
+                    <div class="tarot-card disabled" id="card3" onclick="revealCard('tarot', 3)">
+                        <div class="card-pos">FUTURE</div>
+                        <div class="card-icon">🎴</div>
+                        <div class="card-name">Upload Palm First</div>
+                        <div class="card-keywords"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section" style="margin-bottom: 40px;">
+            <h2 class="section-title">🃏 Lenormand Oracle Pair</h2>
+            <p style="text-align: center; color: #aaa; margin-bottom: 20px;">Two cards that combine to reveal a specific outcome</p>
+            <div class="cards-container">
+                <div class="lenormand-pair">
+                    <div class="lenormand-card disabled" id="len1" onclick="revealCard('lenormand', 1)">
+                        <div class="lenormand-number">I</div>
+                        <div class="lenormand-icon">🎴</div>
+                        <div class="lenormand-name">Card 1</div>
+                    </div>
+                    <div class="lenormand-card disabled" id="len2" onclick="revealCard('lenormand', 2)">
+                        <div class="lenormand-number">II</div>
+                        <div class="lenormand-icon">🎴</div>
+                        <div class="lenormand-name">Card 2</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="read-btn" id="readBtn" onclick="generateReading()" disabled>🔮 Generate Complete Reading</button>
+
+        <div class="results" id="results">
+            <h2 class="section-title">🌟 Your Destiny Reading</h2>
+            <div id="readingContent"></div>
+        </div>
+
+        <footer>For entertainment purposes only • Trust your intuition • Play responsibly</footer>
+    </div>
+
+    <script>
+        function createStars() {
+            const c = document.getElementById('stars');
+            for(let i=0; i<100; i++) {
+                const s = document.createElement('div');
+                s.className = 'star';
+                s.style.left = Math.random()*100 + '%';
+                s.style.top = Math.random()*100 + '%';
+                s.style.width = Math.random()*3 + 'px';
+                s.style.height = s.style.width;
+                s.style.animationDelay = Math.random()*3 + 's';
+                c.appendChild(s);
+            }
+        }
+        createStars();
+
+        const tarotDeck = {
+            major: [
+                { n: "The Fool", num: 0, e: "spirit", i: "🃏", k: "New beginnings", m: "Leap of faith into the unknown.", a: "Take the risk." },
+                { n: "The Magician", num: 1, e: "air", i: "🎩", k: "Manifestation", m: "You have all tools needed.", a: "Begin now." },
+                { n: "High Priestess", num: 2, e: "water", i: "🌙", k: "Intuition", m: "Trust your inner voice.", a: "Listen to dreams." },
+                { n: "Empress", num: 3, e: "earth", i: "👸", k: "Abundance", m: "Creative fertility unfolds.", a: "Nurture projects." },
+                { n: "Emperor", num: 4, e: "fire", i: "👑", k: "Authority", m: "Establish order and structure.", a: "Take charge." },
+                { n: "Hierophant", num: 5, e: "earth", i: "⛪", k: "Tradition", m: "Seek wisdom from mentors.", a: "Learn from rules." },
+                { n: "Lovers", num: 6, e: "air", i: "💕", k: "Choices", m: "Significant relationship choice.", a: "Choose from love." },
+                { n: "Chariot", num: 7, e: "water", i: "🏇", k: "Victory", m: "Willpower brings success.", a: "Stay focused." },
+                { n: "Strength", num: 8, e: "fire", i: "🦁", k: "Courage", m: "Inner strength prevails.", a: "Be patient." },
+                { n: "Hermit", num: 9, e: "earth", i: "🧙‍♂️", k: "Solitude", m: "Seek answers within.", a: "Withdraw to reflect." },
+                { n: "Wheel of Fortune", num: 10, e: "fire", i: "🎡", k: "Destiny", m: "Luck turns in your favor.", a: "Embrace change." },
+                { n: "Justice", num: 11, e: "air", i: "⚖️", k: "Truth", m: "Karmic balance restored.", a: "Be honest." },
+                { n: "Hanged Man", num: 12, e: "water", i: "🙃", k: "Surrender", m: "See from new angle.", a: "Let go." },
+                { n: "Death", num: 13, e: "water", i: "💀", k: "Endings", m: "Transformation is necessary.", a: "Release the old." },
+                { n: "Temperance", num: 14, e: "fire", i: "🏺", k: "Balance", m: "Find the middle path.", a: "Be patient." },
+                { n: "Devil", num: 15, e: "earth", i: "😈", k: "Bondage", m: "Break self-imposed chains.", a: "Reclaim power." },
+                { n: "Tower", num: 16, e: "fire", i: "🗼", k: "Upheaval", m: "Sudden change clears way.", a: "Don't resist." },
+                { n: "Star", num: 17, e: "air", i: "⭐", k: "Hope", m: "Healing and inspiration.", a: "Trust guidance." },
+                { n: "Moon", num: 18, e: "water", i: "🌕", k: "Illusion", m: "Navigate uncertainty.", a: "Trust intuition." },
+                { n: "Sun", num: 19, e: "fire", i: "☀️", k: "Joy", m: "Success and vitality.", a: "Celebrate." },
+                { n: "Judgement", num: 20, e: "fire", i: "📯", k: "Rebirth", m: "Spiritual awakening.", a: "Answer calling." },
+                { n: "World", num: 21, e: "earth", i: "🌍", k: "Completion", m: "Cycle completes successfully.", a: "Celebrate achievement." }
+            ],
+            wands: [
+                { n: "Ace of Wands", num: 1, e: "fire", i: "🔥", k: "Inspiration", m: "New passionate beginning.", a: "Act now." },
+                { n: "Two of Wands", num: 2, e: "fire", i: "🌍", k: "Planning", m: "World at your feet.", a: "Plan boldly." },
+                { n: "Three of Wands", num: 3, e: "fire", i: "🔥", k: "Expansion", m: "Plans manifest.", a: "Look ahead." },
+                { n: "Four of Wands", num: 4, e: "fire", i: "🏛️", k: "Celebration", m: "Stability and joy.", a: "Celebrate." },
+                { n: "Five of Wands", num: 5, e: "fire", i: "⚔️", k: "Conflict", m: "Competition arises.", a: "Stand firm." },
+                { n: "Six of Wands", num: 6, e: "fire", i: "🏆", k: "Victory", m: "Recognition arrives.", a: "Accept praise." },
+                { n: "Seven of Wands", num: 7, e: "fire", i: "🛡️", k: "Defense", m: "Protect your position.", a: "Don't back down." },
+                { n: "Eight of Wands", num: 8, e: "fire", i: "⚡", k: "Speed", m: "Rapid movement.", a: "Move quickly." },
+                { n: "Nine of Wands", num: 9, e: "fire", i: "💪", k: "Resilience", m: "Last stand before victory.", a: "Persist." },
+                { n: "Ten of Wands", num: 10, e: "fire", i: "📦", k: "Burden", m: "Overwhelmed by duty.", a: "Ask for help." },
+                { n: "Page of Wands", num: 11, e: "fire", i: "👦", k: "Exploration", m: "Exciting news.", a: "Stay curious." },
+                { n: "Knight of Wands", num: 12, e: "fire", i: "🏇", k: "Action", m: "Charge forward.", a: "Act with passion." },
+                { n: "Queen of Wands", num: 13, e: "fire", i: "👸", k: "Confidence", m: "Vibrant energy.", a: "Own your power." },
+                { n: "King of Wands", num: 14, e: "fire", i: "🤴", k: "Leadership", m: "Visionary leader.", a: "Lead boldly." }
+            ],
+            cups: [
+                { n: "Ace of Cups", num: 1, e: "water", i: "🏆", k: "Love", m: "Emotional new beginning.", a: "Open heart." },
+                { n: "Two of Cups", num: 2, e: "water", i: "💑", k: "Partnership", m: "Deep connection.", a: "Nurture bond." },
+                { n: "Three of Cups", num: 3, e: "water", i: "🥂", k: "Friendship", m: "Celebration with others.", a: "Socialize." },
+                { n: "Four of Cups", num: 4, e: "water", i: "😔", k: "Apathy", m: "Missed opportunities.", a: "Look up." },
+                { n: "Five of Cups", num: 5, e: "water", i: "😢", k: "Loss", m: "Grief over what's lost.", a: "See what remains." },
+                { n: "Six of Cups", num: 6, e: "water", i: "👶", k: "Nostalgia", m: "Past memories return.", a: "Heal inner child." },
+                { n: "Seven of Cups", num: 7, e: "water", i: "🌈", k: "Choices", m: "Many options, confusion.", a: "Choose wisely." },
+                { n: "Eight of Cups", num: 8, e: "water", i: "🚶", k: "Leaving", m: "Walking away.", a: "Seek deeper meaning." },
+                { n: "Nine of Cups", num: 9, e: "water", i: "😌", k: "Wishes", m: "Emotional satisfaction.", a: "Enjoy fulfillment." },
+                { n: "Ten of Cups", num: 10, e: "water", i: "👨‍👧", k: "Family", m: "Emotional harmony.", a: "Nurture family." },
+                { n: "Page of Cups", num: 11, e: "water", i: "👧", k: "Creativity", m: "Creative message.", a: "Stay open." },
+                { n: "Knight of Cups", num: 12, e: "water", i: "🤴", k: "Romance", m: "Romantic offer.", a: "Follow heart." },
+                { n: "Queen of Cups", num: 13, e: "water", i: "👸💧", k: "Compassion", m: "Emotional wisdom.", a: "Trust intuition." },
+                { n: "King of Cups", num: 14, e: "water", i: "🤴", k: "Balance", m: "Emotional control.", a: "Balance heart/mind." }
+            ],
+            swords: [
+                { n: "Ace of Swords", num: 1, e: "air", i: "⚔️", k: "Clarity", m: "Mental breakthrough.", a: "Speak truth." },
+                { n: "Two of Swords", num: 2, e: "air", i: "🙈", k: "Indecision", m: "Stalemate.", a: "Face choice." },
+                { n: "Three of Swords", num: 3, e: "air", i: "💔", k: "Heartbreak", m: "Painful truth.", a: "Feel to heal." },
+                { n: "Four of Swords", num: 4, e: "air", i: "😴", k: "Rest", m: "Mental retreat.", a: "Rest now." },
+                { n: "Five of Swords", num: 5, e: "air", i: "😏", k: "Conflict", m: "Hollow victory.", a: "Pick battles." },
+                { n: "Six of Swords", num: 6, e: "air", i: "⛵", k: "Transition", m: "Moving to calm.", a: "Keep going." },
+                { n: "Seven of Swords", num: 7, e: "air", i: "🦊", k: "Strategy", m: "Deception or stealth.", a: "Be careful." },
+                { n: "Eight of Swords", num: 8, e: "air", i: "🙉", k: "Trapped", m: "Self-imposed limits.", a: "Free yourself." },
+                { n: "Nine of Swords", num: 9, e: "air", i: "😰", k: "Anxiety", m: "Mental torment.", a: "Challenge fears." },
+                { n: "Ten of Swords", num: 10, e: "air", i: "🗡️", k: "Ending", m: "Rock bottom.", a: "Rebuild." },
+                { n: "Page of Swords", num: 11, e: "air", i: "👦️", k: "Curiosity", m: "New ideas.", a: "Stay vigilant." },
+                { n: "Knight of Swords", num: 12, e: "air", i: "🏇️", k: "Action", m: "Direct action.", a: "Think first." },
+                { n: "Queen of Swords", num: 13, e: "air", i: "👸⚔️", k: "Clarity", m: "Independent mind.", a: "Set boundaries." },
+                { n: "King of Swords", num: 14, e: "air", i: "🤴️", k: "Authority", m: "Intellectual power.", a: "Lead with truth." }
+            ],
+            pentacles: [
+                { n: "Ace of Pentacles", num: 1, e: "earth", i: "🪙", k: "Opportunity", m: "Material gain.", a: "Seize it." },
+                { n: "Two of Pentacles", num: 2, e: "earth", i: "🤹", k: "Balance", m: "Juggling duties.", a: "Stay flexible." },
+                { n: "Three of Pentacles", num: 3, e: "earth", i: "👷", k: "Teamwork", m: "Collaboration.", a: "Work together." },
+                { n: "Four of Pentacles", num: 4, e: "earth", i: "💰", k: "Security", m: "Holding on tight.", a: "Don't hoard." },
+                { n: "Five of Pentacles", num: 5, e: "earth", i: "🥶", k: "Hardship", m: "Financial struggle.", a: "Ask for help." },
+                { n: "Six of Pentacles", num: 6, e: "earth", i: "⚖️", k: "Generosity", m: "Give and receive.", a: "Be generous." },
+                { n: "Seven of Pentacles", num: 7, e: "earth", i: "🌱", k: "Patience", m: "Waiting for growth.", a: "Be patient." },
+                { n: "Eight of Pentacles", num: 8, e: "earth", i: "🔨", k: "Mastery", m: "Hard work.", a: "Focus on craft." },
+                { n: "Nine of Pentacles", num: 9, e: "earth", i: "🦚", k: "Luxury", m: "Enjoying success.", a: "Appreciate." },
+                { n: "Ten of Pentacles", num: 10, e: "earth", i: "🏰", k: "Legacy", m: "Family wealth.", a: "Build legacy." },
+                { n: "Page of Pentacles", num: 11, e: "earth", i: "👦", k: "Study", m: "Practical learning.", a: "Stay grounded." },
+                { n: "Knight of Pentacles", num: 12, e: "earth", i: "🏇", k: "Routine", m: "Steady progress.", a: "Be consistent." },
+                { n: "Queen of Pentacles", num: 13, e: "earth", i: "👸🪙", k: "Nurturing", m: "Practical care.", a: "Nurture self." },
+                { n: "King of Pentacles", num: 14, e: "earth", i: "🤴", k: "Success", m: "Material mastery.", a: "Lead generously." }
+            ]
+        };
+
+        const lenormandDeck = [
+            { n: "Rider", num: 1, i: "🏇", k: "News, Speed", m: "Fast news or a visitor arrives." },
+            { n: "Clover", num: 2, i: "🍀", k: "Luck, Chance", m: "Short-term luck or opportunity." },
+            { n: "Ship", num: 3, i: "⛵", k: "Travel, Distance", m: "Journey or foreign connection." },
+            { n: "House", num: 4, i: "🏠", k: "Home, Family", m: "Domestic stability or family matters." },
+            { n: "Tree", num: 5, i: "🌳", k: "Health, Growth", m: "Long-term growth or health." },
+            { n: "Clouds", num: 6, i: "☁️", k: "Confusion, Doubt", m: "Uncertainty or lack of clarity." },
+            { n: "Snake", num: 7, i: "🐍", k: "Deception, Complexity", m: "Complication or betrayal." },
+            { n: "Coffin", num: 8, i: "⚰️", k: "Ending, Stagnation", m: "Something must end or pause." },
+            { n: "Bouquet", num: 9, i: "💐", k: "Gift, Joy", m: "Happy surprise or compliment." },
+            { n: "Scythe", num: 10, i: "🌾", k: "Danger, Sudden Cut", m: "Sudden change or accident." },
+            { n: "Whip", num: 11, i: "🎗️", k: "Conflict, Passion", m: "Argument or intense energy." },
+            { n: "Birds", num: 12, i: "🐦", k: "Talk, Anxiety", m: "Gossip or nervous chatter." },
+            { n: "Child", num: 13, i: "👶", k: "New, Innocence", m: "New beginning or small start." },
+            { n: "Fox", num: 14, i: "🦊", k: "Work, Cunning", m: "Job matters or caution needed." },
+            { n: "Bear", num: 15, i: "🐻", k: "Power, Protection", m: "Strength or authority figure." },
+            { n: "Stars", num: 16, i: "🌟", k: "Hope, Clarity", m: "Inspiration or spiritual guidance." },
+            { n: "Stork", num: 17, i: "🦢", k: "Change, Move", m: "Positive change or relocation." },
+            { n: "Dog", num: 18, i: "🐕", k: "Friend, Loyalty", m: "Faithful friend or ally." },
+            { n: "Tower", num: 19, i: "🏰", k: "Institution, Alone", m: "Government, business, or isolation." },
+            { n: "Garden", num: 20, i: "🌳", k: "Public, Social", m: "Social gathering or public event." },
+            { n: "Mountain", num: 21, i: "🏔️", k: "Obstacle, Delay", m: "Big blockage or challenge." },
+            { n: "Crossroads", num: 22, i: "🛤️", k: "Choice, Options", m: "Important decision to make." },
+            { n: "Mice", num: 23, i: "🐁", k: "Loss, Stress", m: "Gradual loss or anxiety." },
+            { n: "Heart", num: 24, i: "❤️", k: "Love, Emotion", m: "Romance or deep feeling." },
+            { n: "Ring", num: 25, i: "💍", k: "Commitment, Cycle", m: "Marriage, contract, or repetition." },
+            { n: "Book", num: 26, i: "📖", k: "Secret, Knowledge", m: "Hidden information or study." },
+            { n: "Letter", num: 27, i: "✉️", k: "Message, Document", m: "Written news or email." },
+            { n: "Man", num: 28, i: "👨", k: "Querent (Male)", m: "The man in question." },
+            { n: "Woman", num: 29, i: "👩", k: "Querent (Female)", m: "The woman in question." },
+            { n: "Lily", num: 30, i: "🕊️", k: "Peace, Maturity", m: "Calm, virtue, or older person." },
+            { n: "Sun", num: 31, i: "☀️", k: "Success, Energy", m: "Great success and vitality." },
+            { n: "Moon", num: 32, i: "🌙", k: "Emotions, Fame", m: "Recognition or emotional cycle." },
+            { n: "Key", num: 33, i: "🔑", k: "Solution, Yes", m: "Important answer or breakthrough." },
+            { n: "Fish", num: 34, i: "🐟", k: "Money, Flow", m: "Financial abundance." },
+            { n: "Anchor", num: 35, i: "⚓", k: "Stability, Goal", m: "Security or long-term plan." },
+            { n: "Cross", num: 36, i: "✝️", k: "Burden, Faith", m: "Heavy load or spiritual test." }
+        ];
+
+        const palmData = {
+            heart: [
+                { t: "long_curved", m: "Your heart line curves strongly upward. You're emotionally expressive.", c: "You may give too much.", num: 6 },
+                { t: "short_straight", m: "Your heart line is shorter. You're reserved emotionally.", c: "You may struggle with vulnerability.", num: 4 },
+                { t: "forked", m: "Your heart line splits. You balance head and heart.", c: "You may feel torn.", num: 2 },
+                { t: "chained", m: "Your heart line shows chains. You've experienced pain.", c: "Past wounds affect you.", num: 8 }
+            ],
+            head: [
+                { t: "long_curved", m: "Your head line curves. Creative mind.", c: "You may overthink.", num: 7 },
+                { t: "straight_long", m: "Your head line is straight. Analytical mind.", c: "You may dismiss intuition.", num: 1 },
+                { t: "short", m: "Your head line is short. Direct thinker.", c: "Hasty decisions.", num: 3 },
+                { t: "forked", m: "Your head line forks. Versatile mind.", c: "Indecision.", num: 9 }
+            ],
+            life: [
+                { t: "deep_long", m: "Your life line is deep. Robust vitality.", c: "Push too hard.", num: 5 },
+                { t: "shallow_short", m: "Your life line is shallow. Manage energy.", c: "Exhaust easily.", num: 2 },
+                { t: "wide_arc", m: "Your life line sweeps wide. Enthusiastic.", c: "Restless.", num: 8 },
+                { t: "close_thumb", m: "Your life line is close to thumb. Cautious.", c: "Resist change.", num: 4 }
+            ],
+            fate: [
+                { t: "strong_clear", m: "Your fate line is clear. Strong destiny.", c: "Frustrated by others.", num: 1 },
+                { t: "broken", m: "Your fate line shows breaks. Reinvention.", c: "Feel unstable.", num: 7 },
+                { t: "absent", m: "No fate line. Create your path.", c: "Feel lost.", num: 0 },
+                { t: "forked", m: "Your fate line forks. Multiple paths.", c: "Pulled directions.", num: 3 }
+            ]
+        };
+
+        let palmValidated = false;
+        let palmAnalysis = {};
+        let tarotRevealed = [false, false, false];
+        let tarotCards = {};
+        let lenormandRevealed = [false, false];
+        let lenormandCards = {};
+
+        function showStatus(msg, type) {
+            const el = document.getElementById('statusMsg');
+            el.textContent = msg;
+            el.className = 'status-msg ' + type;
+        }
+
+        function skipValidation() {
+            showStatus('Upload your palm image and confirm manually', 'info');
+            document.getElementById('palmUpload').click();
+        }
+
+        document.getElementById('palmUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            showStatus('Loading image...', 'info');
+            
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const img = document.getElementById('palmImage');
+                img.src = evt.target.result;
+                img.style.display = 'inline-block';
+                document.getElementById('imgContainer').style.display = 'block';
+                document.getElementById('uploadArea').style.display = 'none';
+                document.getElementById('confirmBtn').style.display = 'inline-block';
+                showStatus('Image loaded! Please confirm.', 'success');
+            };
+            reader.onerror = function() {
+                showStatus('Error loading image.', 'error');
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function confirmPalm() {
+            palmValidated = true;
+            palmAnalysis.heart = palmData.heart[Math.floor(Math.random()*4)];
+            palmAnalysis.head = palmData.head[Math.floor(Math.random()*4)];
+            palmAnalysis.life = palmData.life[Math.floor(Math.random()*4)];
+            palmAnalysis.fate = palmData.fate[Math.floor(Math.random()*4)];
+            
+            showStatus('✅ Palm confirmed! Reveal cards now.', 'success');
+            document.getElementById('confirmBtn').style.display = 'none';
+            
+            document.querySelectorAll('.tarot-card').forEach(c => {
+                c.classList.remove('disabled');
+                c.querySelector('.card-name').textContent = 'Click to Reveal';
+            });
+            document.querySelectorAll('.lenormand-card').forEach(c => {
+                c.classList.remove('disabled');
+                c.querySelector('.lenormand-name').textContent = 'Click to Reveal';
+            });
+            
+            checkReadiness();
+        }
+
+        function revealCard(type, num) {
+            if (!palmValidated) { alert('Confirm palm first!'); return; }
+            
+            if (type === 'tarot') {
+                if (tarotRevealed[num-1]) return;
+                const allCards = [...tarotDeck.major, ...tarotDeck.wands, ...tarotDeck.cups, ...tarotDeck.swords, ...tarotDeck.pentacles];
+                const card = allCards[Math.floor(Math.random() * allCards.length)];
+                
+                const el = document.getElementById('card'+num);
+                el.classList.add('revealed');
+                el.querySelector('.card-icon').textContent = card.i;
+                el.querySelector('.card-name').textContent = card.n;
+                el.querySelector('.card-keywords').textContent = card.k;
+                
+                tarotRevealed[num-1] = true;
+                tarotCards[num===1?'past':num===2?'present':'future'] = card;
+            } else if (type === 'lenormand') {
+                if (lenormandRevealed[num-1]) return;
+                const card = lenormandDeck[Math.floor(Math.random() * lenormandDeck.length)];
+                
+                const el = document.getElementById('len'+num);
+                el.classList.add('revealed');
+                el.querySelector('.lenormand-icon').textContent = card.i;
+                el.querySelector('.lenormand-name').textContent = card.n + " (" + card.k + ")";
+                
+                lenormandRevealed[num-1] = true;
+                lenormandCards[num===1?'first':'second'] = card;
+            }
+            
+            checkReadiness();
+        }
+
+        function checkReadiness() {
+            const tarotDone = tarotRevealed.every(x => x);
+            const lenDone = lenormandRevealed.every(x => x);
+            document.getElementById('readBtn').disabled = !(palmValidated && tarotDone && lenDone);
+        }
+
+        function getLenormandMeaning(c1, c2) {
+            const themes = {
+                "Rider+Heart": "News of love or a romantic visitor.",
+                "Snake+Ring": "Complicated commitment or toxic relationship.",
+                "Sun+Fish": "Financial success and abundance.",
+                "Clouds+Stars": "Confusion clearing up to reveal hope.",
+                "Coffin+Child": "End of something leading to a new beginning.",
+                "Tower+Man": "A man in authority or business.",
+                "Garden+Woman": "A woman in public or social setting.",
+                "Scythe+Book": "Sudden revelation of a secret.",
+                "Anchor+Tree": "Long-term stability and health.",
+                "Mice+House": "Stress at home or gradual loss of security."
+            };
+            
+            const key = `${c1.n}+${c2.n}`;
+            const revKey = `${c2.n}+${c1.n}`;
+            
+            if (themes[key]) return themes[key];
+            if (themes[revKey]) return themes[revKey];
+            
+            return `The ${c1.n} (${c1.k}) influences the ${c2.n} (${c2.k}). This suggests ${c1.m.toLowerCase()} impacting ${c2.m.toLowerCase()}`;
+        }
+
+        function generate4DPrediction() {
+            const p = tarotCards.past;
+            const r = tarotCards.present;
+            const f = tarotCards.future;
+            const l1 = lenormandCards.first;
+            const l2 = lenormandCards.second;
+            
+            const cardNums = [(p.num||0), (r.num||0), (f.num||0)];
+            const palmNums = [palmAnalysis.heart.num, palmAnalysis.head.num, palmAnalysis.life.num, palmAnalysis.fate.num];
+            const lenNums = [l1.num, l2.num];
+            
+            const predictions = [];
+            
+            let primary = ((cardNums[0] * 1000) + (cardNums[1] * 100) + (cardNums[2] * 10) + palmNums[0]) % 10000;
+            predictions.push({ label: "Primary Destiny", value: String(primary).padStart(4, '0'), meaning: `From ${p.n} → ${r.n} → ${f.n}` });
+            
+            let lenLuck = ((l1.num * 100) + (l2.num * 10) + palmNums[1] + 7) % 10000;
+            predictions.push({ label: "Lenormand Luck", value: String(lenLuck).padStart(4, '0'), meaning: `From ${l1.n} + ${l2.n} pair` });
+            
+            let secondary = ((palmNums[0] * 1000) + (palmNums[1] * 100) + (palmNums[2] * 10) + palmNums[3]) % 10000;
+            predictions.push({ label: "Palm Energy", value: String(secondary).padStart(4, '0'), meaning: `Derived from your lines` });
+            
+            const today = new Date();
+            const dateNum = today.getDate() + today.getMonth() + 1;
+            let lucky = ((dateNum * 88) + lenNums.reduce((a,b)=>a+b,0) * 11) % 10000;
+            predictions.push({ label: "Cosmic Lucky", value: String(lucky).padStart(4, '0'), meaning: `Aligned with today's energy` });
+            
+            const elemDays = { fire: 3, water: 7, air: 5, earth: 9, spirit: 11 };
+            const luckyDays = elemDays[r.e] || 7;
+            const endDate = new Date();
+            endDate.setDate(endDate.getDate() + luckyDays);
+            
+            return {
+                predictions,
+                luckyPeriod: `${luckyDays} days`,
+                luckyDate: endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                bestTime: r.e === 'fire' ? 'Morning' : r.e === 'water' ? 'Evening' : 'Midday'
+            };
+        }
+
+        function generateReading() {
+            const p = tarotCards.past;
+            const r = tarotCards.present;
+            const f = tarotCards.future;
+            const l1 = lenormandCards.first;
+            const l2 = lenormandCards.second;
+            
+            const prediction4D = generate4DPrediction();
+            const lenormandPairMeaning = getLenormandMeaning(l1, l2);
+            
+            let numbersHTML = '';
+            prediction4D.predictions.forEach(pred => {
+                numbersHTML += `
+                    <div class="number-card">
+                        <div class="number-label">${pred.label}</div>
+                        <div class="number-value">${pred.value}</div>
+                        <div class="number-meaning">${pred.meaning}</div>
+                    </div>
+                `;
+            });
+
+            const html = `
+                <div class="reading-block">
+                    <h3>🖐 Your Palm Profile</h3>
+                    <div class="reading-text">
+                        <p><strong>Heart:</strong> ${palmAnalysis.heart.m} <em>(${palmAnalysis.heart.c})</em></p>
+                        <p style="margin-top:10px;"><strong>Head:</strong> ${palmAnalysis.head.m} <em>(${palmAnalysis.head.c})</em></p>
+                        <p style="margin-top:10px;"><strong>Life:</strong> ${palmAnalysis.life.m} <em>(${palmAnalysis.life.c})</em></p>
+                        <p style="margin-top:10px;"><strong>Fate:</strong> ${palmAnalysis.fate.m} <em>(${palmAnalysis.fate.c})</em></p>
+                    </div>
+                </div>
+
+                <div class="reading-block">
+                    <h3>🔮 Tarot Journey</h3>
+                    <div class="reading-text">
+                        <p><strong class="highlight">PAST: ${p.n}</strong><br>${p.m}</p>
+                        <p style="margin-top:15px;"><strong class="highlight">PRESENT: ${r.n}</strong><br>${r.m}</p>
+                        <p style="margin-top:15px;"><strong class="highlight">FUTURE: ${f.n}</strong><br>${f.m}</p>
+                    </div>
+                </div>
+
+                <div class="reading-block" style="border-left-color: #4ecdc4;">
+                    <h3>🃏 Lenormand Oracle Pair</h3>
+                    <div class="reading-text">
+                        <p style="font-size: 1.2rem; margin-bottom: 10px;">
+                            <span style="color:#4ecdc4">${l1.n}</span> + <span style="color:#4ecdc4">${l2.n}</span>
+                        </p>
+                        <div class="insight-box" style="border-color: #4ecdc4; background: rgba(78, 205, 196, 0.1);">
+                            <h4 style="color: #4ecdc4;">The Prediction</h4>
+                            <p>${lenormandPairMeaning}</p>
+                        </div>
+                        <p style="margin-top:10px; font-size: 0.9rem; color: #aaa;">
+                            Lenormand cards are read together. ${l1.n} modifies ${l2.n} to create this specific outcome.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="prediction-box">
+                    <h3 class="prediction-title">🔮 4D Lucky Prediction</h3>
+                    <p style="color: #d8b4e2; margin-bottom: 20px;">Numbers from Palm + Tarot + Lenormand</p>
+                    <div class="numbers-grid">
+                        ${numbersHTML}
+                    </div>
+                    <div class="lucky-period">
+                        <h4>⏰ Lucky Period</h4>
+                        <p><strong>Duration:</strong> ${prediction4D.luckyPeriod}</p>
+                        <p><strong>Peak Date:</strong> ${prediction4D.luckyDate}</p>
+                        <p><strong>Best Time:</strong> ${prediction4D.bestTime}</p>
+                    </div>
+                    <div class="warning-disclaimer">
+                        ⚠️ <strong>Disclaimer:</strong> For entertainment only. Play responsibly.
+                    </div>
+                </div>
+
+                <div class="reading-block" style="border-left-color: #9b59b6;">
+                    <h3>🌟 Final Wisdom</h3>
+                    <div class="reading-text">
+                        <p>Your reading combines ancient wisdom. The Tarot shows your psychological path, the Lenormand predicts specific events, and your Palm shows your innate power. Use the 4D numbers as a focal point for your intention.</p>
+                        <p style="margin-top: 15px; font-style: italic; color: #ffd700;">"The cards reveal the weather, but you steer the ship."</p>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('readingContent').innerHTML = html;
+            document.getElementById('results').classList.add('active');
+            document.getElementById('results').scrollIntoView({behavior: 'smooth'});
+        }
+    </script>
+</body>
+</html>
